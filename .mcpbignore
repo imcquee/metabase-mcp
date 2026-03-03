@@ -25,6 +25,8 @@ CHANGELOG.md
 .env
 .env.*
 !.env.example
+.envrc
+.direnv/
 .eslintrc*
 .prettierrc*
 .gitignore

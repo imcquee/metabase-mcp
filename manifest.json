@@ -28,6 +28,7 @@
         "METABASE_USER_EMAIL": "${user_config.metabase_user_email}",
         "METABASE_PASSWORD": "${user_config.metabase_password}",
         "EXPORT_DIRECTORY": "${user_config.export_directory}",
+        "BUSINESS_CONTEXT_FILE": "${user_config.business_context_file}",
         "METABASE_READ_ONLY_MODE": "${user_config.read_only_mode}"
       }
     }
@@ -115,6 +116,13 @@
       "description": "Directory where exported files will be saved",
       "required": true,
       "default": "${DOWNLOADS}/Metabase"
+    },
+    "business_context_file": {
+      "type": "file",
+      "title": "Business Context File",
+      "description": "Optional markdown file containing business terminology, rules, and edge cases that will be included in all tool descriptions",
+      "required": false,
+      "default": ""
     }
   },
   "compatibility": {
