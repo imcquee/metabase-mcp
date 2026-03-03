@@ -1,5 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { readFileSync, existsSync } from 'fs';
 
 const VERSION = '1.1.5';
 import {
@@ -11,7 +12,7 @@ import {
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { LogLevel } from './config.js';
+import { config, LogLevel } from './config.js';
 import { generateRequestId } from './utils/index.js';
 // Note: ApiError and isMcpError removed - errors are caught and returned, not type-checked
 import { MetabaseApiClient } from './api.js';
@@ -33,8 +34,11 @@ import { handleListPrompts, handleGetPrompt } from './handlers/prompts/index.js'
 export class MetabaseServer {
   private server: Server;
   private apiClient: MetabaseApiClient;
+  private businessContext: string;
 
   constructor() {
+    // Load business context from file if configured
+    this.businessContext = this.loadBusinessContext();
     this.server = new Server(
       {
         name: 'metabase-mcp',
@@ -128,6 +132,37 @@ export class MetabaseServer {
   }
 
   /**
+   * Load business context from configured file
+   */
+  private loadBusinessContext(): string {
+    const filePath = config.BUSINESS_CONTEXT_FILE;
+
+    if (!filePath) {
+      return '';
+    }
+
+    try {
+      if (!existsSync(filePath)) {
+        this.logWarn(`Business context file not found: ${filePath}`);
+        return '';
+      }
+
+      const content = readFileSync(filePath, 'utf-8').trim();
+
+      if (!content) {
+        this.logWarn(`Business context file is empty: ${filePath}`);
+        return '';
+      }
+
+      this.logInfo(`Loaded business context from ${filePath}`);
+      return `\n\n**BUSINESS CONTEXT:**\n${content}`;
+    } catch (error) {
+      this.logError(`Failed to read business context file ${filePath}`, error);
+      return '';
+    }
+  }
+
+  /**
    * Set up resource handlers
    */
   private setupResourceHandlers() {
@@ -167,7 +202,8 @@ export class MetabaseServer {
           {
             name: 'search',
             description:
-              'Search across all Metabase items using native search API. Supports cards, dashboards, tables, collections, databases, and more. Use this first for finding any Metabase content. Returns search metrics, recommendations, and clean results organized by model type.',
+              'Search across all Metabase items using native search API. Supports cards, dashboards, tables, collections, databases, and more. Use this first for finding any Metabase content. Returns search metrics, recommendations, and clean results organized by model type.' +
+              this.businessContext,
             annotations: {
               readOnlyHint: true,
               destructiveHint: false,
@@ -247,7 +283,8 @@ export class MetabaseServer {
           {
             name: 'retrieve',
             description:
-              'Fetch additional details for supported models (Cards, Dashboards, Tables, Databases, Collections, Fields). Supports multiple IDs (max 50 per request) with intelligent concurrent processing and optimized caching. Includes table pagination for large databases exceeding token limits.',
+              'Fetch additional details for supported models (Cards, Dashboards, Tables, Databases, Collections, Fields). Supports multiple IDs (max 50 per request) with intelligent concurrent processing and optimized caching. Includes table pagination for large databases exceeding token limits.' +
+              this.businessContext,
             annotations: {
               readOnlyHint: true,
               destructiveHint: false,
@@ -294,7 +331,8 @@ export class MetabaseServer {
           {
             name: 'list',
             description:
-              'Fetch all records for a single Metabase resource type with highly optimized responses for overview purposes. Retrieves complete lists of cards, dashboards, tables, databases, or collections. Returns only essential identifier fields for efficient browsing and includes intelligent caching for performance. Supports pagination for large datasets exceeding token limits.',
+              'Fetch all records for a single Metabase resource type with highly optimized responses for overview purposes. Retrieves complete lists of cards, dashboards, tables, databases, or collections. Returns only essential identifier fields for efficient browsing and includes intelligent caching for performance. Supports pagination for large datasets exceeding token limits.' +
+              this.businessContext,
             annotations: {
               readOnlyHint: true,
               destructiveHint: false,
@@ -330,7 +368,8 @@ export class MetabaseServer {
           {
             name: 'execute',
             description:
-              'Unified command to execute SQL queries or run saved cards against Metabase databases. Use Card mode when existing cards have the needed filters. Use SQL mode for custom queries or when cards lack required filters. Returns up to 500 rows per request - for larger datasets, use the export tool instead. SECURITY WARNING: SQL mode can execute ANY valid SQL including destructive operations (DELETE, UPDATE, DROP, TRUNCATE, ALTER). Use with caution and ensure appropriate database permissions are configured in Metabase. Note: When Read-Only Mode is enabled, write operations will be rejected with an error.',
+              'Unified command to execute SQL queries or run saved cards against Metabase databases. Use Card mode when existing cards have the needed filters. Use SQL mode for custom queries or when cards lack required filters. Returns up to 500 rows per request - for larger datasets, use the export tool instead. SECURITY WARNING: SQL mode can execute ANY valid SQL including destructive operations (DELETE, UPDATE, DROP, TRUNCATE, ALTER). Use with caution and ensure appropriate database permissions are configured in Metabase. Note: When Read-Only Mode is enabled, write operations will be rejected with an error.' +
+              this.businessContext,
             annotations: {
               readOnlyHint: false,
               destructiveHint: true,
@@ -379,7 +418,8 @@ export class MetabaseServer {
           {
             name: 'export',
             description:
-              'Unified command to export large SQL query results or saved cards using Metabase export endpoints (supports up to 1M rows). Returns data in specified format (CSV, JSON, or XLSX) and automatically saves to Downloads/Metabase folder.',
+              'Unified command to export large SQL query results or saved cards using Metabase export endpoints (supports up to 1M rows). Returns data in specified format (CSV, JSON, or XLSX) and automatically saves to Downloads/Metabase folder.' +
+              this.businessContext,
             annotations: {
               readOnlyHint: true,
               destructiveHint: false,
@@ -432,7 +472,8 @@ export class MetabaseServer {
           {
             name: 'clear_cache',
             description:
-              'Clear the internal cache for stored data. Useful for debugging or when you know the data has changed. Supports granular cache clearing for both individual items and list caches.',
+              'Clear the internal cache for stored data. Useful for debugging or when you know the data has changed. Supports granular cache clearing for both individual items and list caches.' +
+              this.businessContext,
             annotations: {
               readOnlyHint: false,
               destructiveHint: false,

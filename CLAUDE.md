@@ -50,6 +50,7 @@ LOG_LEVEL=info                         # debug, info, warn, error, fatal (debug 
 CACHE_TTL_MS=600000                    # 10 min default
 REQUEST_TIMEOUT_MS=600000              # 10 min default
 EXPORT_DIRECTORY=~/Downloads/Metabase
+BUSINESS_CONTEXT_FILE=                 # Path to business context markdown file (optional)
 METABASE_READ_ONLY_MODE=true           # Restrict to SELECT queries
 ```
 

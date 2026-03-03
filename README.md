@@ -56,6 +56,7 @@ Add the following to your MCP client configuration:
 
         // Optional (defaults shown)
         "EXPORT_DIRECTORY": "~/Downloads/Metabase",    // Export location
+        "BUSINESS_CONTEXT_FILE": "",                   // Path to business context markdown file (optional)
         "METABASE_READ_ONLY_MODE": "true",             // Restrict to SELECT queries
         "LOG_LEVEL": "info",                           // debug, info, warn, error, fatal (debug enables pretty JSON)
         "CACHE_TTL_MS": "600000",                      // 10 minutes
@@ -180,6 +181,33 @@ npm run mcpb:build
 ```
 
 Creates `metabase-mcp-{version}.mcpb` ready for GitHub Releases.
+
+## Configuration Details
+
+### Business Context
+
+You can provide custom business terminology and rules that will be automatically included in all tool descriptions. This helps AI assistants understand your specific business logic and apply it consistently.
+
+Set `BUSINESS_CONTEXT_FILE` to the path of a markdown file containing your business context:
+
+```bash
+BUSINESS_CONTEXT_FILE=~/Documents/metabase-business-context.md
+```
+
+**Example business context file:**
+
+```markdown
+## Key Terminology
+- **Active Customer**: Customer with purchase in last 90 days (NOT 30 days)
+- **Revenue**: Net revenue after returns and discounts
+- **Fiscal Year**: Starts April 1st (NOT January 1st)
+
+## Data Quality Rules
+- Test accounts: User IDs 1000-1999 should be filtered out by default
+- Refunds: Always exclude from revenue unless explicitly requested
+```
+
+This context will be appended to the description of all tools, ensuring AI assistants apply your business rules when executing queries or interpreting results.
 
 ## Security
 
